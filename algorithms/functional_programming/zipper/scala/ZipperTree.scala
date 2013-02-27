@@ -1,102 +1,35 @@
-/**
- * Adapted from "Functional Pearl: The Zipper", Gerard Huet
- * INRIA Rocquencourt, France
- * J. Functional Programming 7 (5): 549–554, September 1997.
- * Copyright 1997 Cambridge University Press
- */
-package debasion.models.immutable
+package org.calanbur.zipper.burloiu
 
-sealed trait Tree
-case class Item(value: String) extends Tree
-case class Section(forest: List[Tree]) extends Tree
-
-sealed trait Path
-case class Top() extends Path
-case class Node(l: List[Tree], p: Path, r: List[Tree]) extends Path
-
-sealed trait Location
-case class Loc(tree: Tree, path: Path) extends Location {
+sealed trait Tree[+A]
+case class NilNode() extends Tree[Nothing]
+case class Node[+A](
+    value: A,
+    lefts: List[Node[A]],
+    children: List[Node[A]],
+    rights: List[Node[A]],
+    parent: Tree[A])
+  extends Tree[A] {
   
   // NAVIGATION
   // ==========
   
-  def left = path match {
-    case Top() => throw new IllegalArgumentException("left of top")
-    case Node(Nil, _, _) => throw new IllegalArgumentException("left of first")
-    case Node(l :: left, up, right) => Loc(l, Node(left, up, tree :: right))
+  def left: Option[Node[A]] = lefts match {
+    case Nil => None
+    case l :: ls => Some(Node(l.value, ls, l.children, this :: rights, parent))
   }
   
-  def right = path match {
-    case Node(left, up, r :: right) => Loc(r, Node(tree :: left, up, right))
-    case Node(_, _, Nil) => throw new IllegalArgumentException("right of last")
-    case Top() => throw new IllegalArgumentException("right of top")
+  def right: Option[Node[A]] = rights match {
+    case Nil => None
+    case r :: rs => Some(Node(r.value, this :: lefts, r.children, rs, parent))
   }
   
-  // More expensive than other operations: it depends on the "juniority" of
-  // left (left.size).
-  def up = path match {
-    case Node(left, up, right) =>
-      Loc(Section(left.reverse ++ (tree :: right)), up)
-    case Top() => throw new IllegalArgumentException("up of top")
-  }
-  
-  def down = tree match {
-    case Section(firstTree :: forest) =>
-      Loc(firstTree, Node(Nil, path, forest))
-    case Item(_) => throw new IllegalArgumentException("down of item")
-    case _ => throw new IllegalArgumentException("down of empty")
-  }
-  
-  // CHANGES, INSERTIONS AND DELETIONS
-  // =================================throw 
-  
-  def change(newTree: Tree) = Loc(newTree, path)
-  
-  def insertLeft(newLeft: Tree) = path match {
-    case Top() => throw new IllegalArgumentException("insert to left of top")
-    case Node(left, up, right) => Loc(tree, Node(newLeft :: left, up, right))
-  }
-  
-  def insertRight(newRight: Tree) = path match {
-    case Top() => throw new IllegalArgumentException("insert to right of top")
-    case Node(left, up, right) => Loc(tree, Node(left, up, newRight :: right))
-  }
-  
-  def insertDown(newDown: Tree) = tree match {
-    case Item(_) => throw new IllegalArgumentException("down of item")
-    case Section(sons) => Loc(newDown, Node(Nil, path, sons))
-  }
-  
-  def delete = path match {
-    case Top() => throw new IllegalArgumentException("delete of top")
-    case Node(left, up, r :: right) => Loc(r, Node(left, up, right))
-    case Node(l :: left, up, Nil) => Loc(l, Node(left, up, Nil))
-    case Node(Nil, up, Nil) => Loc(Section(Nil), up)
+  def up: Option[Node[A]] = parent match {
+    case NilNode() => None
+//    case Node(v, ls, cs, rs, p) => Node(p.v, )
+    case p: Node[A] => Some(p)
   }
 }
 
-object ZipperTree extends App {
-  // Parse tree of the arithmetic expression: a*b + c*d
-  val parseTree = 
-    Section(List(
-      Section(List(
-        Item("a"),
-        Item("*"),
-        Item("b"))),
-      Item("+"),
-      Section(List(
-        Item("c"),
-        Item("*"),
-        Item("d")))))
-  
-  // The location of the second multiplication sign in the parse tree.
-  val secMulLoc =
-    Loc(Item("*"),
-      Node(
-        List(Item("c")),
-        Node(
-          List(Item("+"), Section(List(Item("a"), Item("*"), Item("b")))),
-          Top(),
-          Nil),
-        List(Item("d"))))
+object ZipperTreeTest extends App {
+  val t = Node("*", Nil, List(Node("a", Nil, Nil, List(Node("b")))))
 }
