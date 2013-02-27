@@ -8,16 +8,18 @@ package org.calanbur.zipper.tree.huet.scars
 
 sealed trait Tree
 case class Item(value: String) extends Tree
-case class Siblings(l: List[Tree], t: Tree, r: List[Tree]) extends Tree {
-  override val toString = "Siblings(L" + l.mkString("[", ",", "]") + "," + t +
-      ",R" + r.mkString("[", ",", "]") + ")";
+case class Node(lefts: List[Tree], tree: Tree, rights: List[Tree]) extends Tree {
+  
+  override val toString = "Node(L" + lefts.mkString("[", ",", "]") + "," + tree +
+      ",R" + rights.mkString("[", ",", "]") + ")";
 }
 
 sealed trait Path
 case class Top() extends Path
-case class Node(l: List[Tree], p: Path, r: List[Tree]) extends Path {
-  override val toString = "Node(L" + l.mkString("[", ",", "]") + "," + p +
-      ",R" + r.mkString("[", ",", "]") + ")";
+case class PathNode(lefts: List[Tree], up: Path, rights: List[Tree]) extends Path {
+  
+  override val toString = "Node(L" + lefts.mkString("[", ",", "]") + "," + up +
+      ",R" + rights.mkString("[", ",", "]") + ")";
 }
 
 sealed trait Location
@@ -28,27 +30,25 @@ case class Loc(tree: Tree, path: Path) extends Location {
   
   def left = path match {
     case Top() => throw new IllegalArgumentException("left of top")
-    case Node(Nil, _, _) => throw new IllegalArgumentException("left of first")
-    case Node(l :: left, up, right) => Loc(l, Node(left, up, tree :: right))
+    case PathNode(Nil, _, _) => throw new IllegalArgumentException("left of first")
+    case PathNode(l :: ls, u, rs) => Loc(l, PathNode(ls, u, tree :: rs))
   }
   
   def right = path match {
-    case Node(left, up, r :: right) => Loc(r, Node(tree :: left, up, right))
-    case Node(_, _, Nil) => throw new IllegalArgumentException("right of last")
+    case PathNode(ls, u, r :: rs) => Loc(r, PathNode(tree :: ls, u, rs))
+    case PathNode(_, _, Nil) => throw new IllegalArgumentException("right of last")
     case Top() => throw new IllegalArgumentException("right of top")
   }
   
-  // More expensive than other operations: it depends on the "juniority" of
-  // left (left.size).
   def up = path match {
-    case Node(left, up, right) =>
-      Loc(Siblings(left, tree, right), up)
+    case PathNode(ls, u, rs) =>
+      Loc(Node(ls, tree, rs), u)
     case Top() => throw new IllegalArgumentException("up of top")
   }
   
   def down = tree match {
-    case Siblings(left, t, right) =>
-      Loc(t, Node(left, path, right))
+    case Node(ls, t, rs) =>
+      Loc(t, PathNode(ls, path, rs))
     case Item(_) => throw new IllegalArgumentException("down of item")
     case _ => throw new IllegalArgumentException("down of empty")
   }
@@ -60,51 +60,51 @@ case class Loc(tree: Tree, path: Path) extends Location {
   
   def insertLeft(newLeft: Tree) = path match {
     case Top() => throw new IllegalArgumentException("insert to left of top")
-    case Node(left, up, right) => Loc(tree, Node(newLeft :: left, up, right))
+    case PathNode(ls, u, rs) => Loc(tree, PathNode(newLeft :: ls, u, rs))
   }
   
   def insertRight(newRight: Tree) = path match {
     case Top() => throw new IllegalArgumentException("insert to right of top")
-    case Node(left, up, right) => Loc(tree, Node(left, up, newRight :: right))
+    case PathNode(ls, u, rs) => Loc(tree, PathNode(ls, u, newRight :: rs))
   }
   
-  def insertDown(newDown: Tree) = tree match {
-    case Item(_) => throw new IllegalArgumentException("down of item")
-    case Section(sons) => Loc(newDown, Node(Nil, path, sons))
-  }
+//  def insertDown(newDown: Tree) = tree match {
+//    case Item(_) => throw new IllegalArgumentException("down of item")
+//    case Section(sons) => Loc(newDown, Node(Nil, path, sons))
+//  }
   
-  def delete = path match {
-    case Top() => throw new IllegalArgumentException("delete of top")
-    case Node(left, up, r :: right) => Loc(r, Node(left, up, right))
-    case Node(l :: left, up, Nil) => Loc(l, Node(left, up, Nil))
-    case Node(Nil, up, Nil) => Loc(Section(Nil), up)
-  }
+//  def delete = path match {
+//    case Top() => throw new IllegalArgumentException("delete of top")
+//    case Node(ls, u, r :: rs) => Loc(r, Node(ls, u, rs))
+//    case Node(l :: ls, u, Nil) => Loc(l, Node(ls, u, Nil))
+//    case Node(Nil, u, Nil) => Loc(Section(Nil), u)
+//  }
 }
 
 object ZipperTree extends App {
   // Parse tree of the arithmetic expression: a*b + c*d
-  val parseTree = 
-    Section(List(
-      Section(List(
-        Item("a"),
-        Item("*"),
-        Item("b"))),
-      Item("+"),
-      Section(List(
-        Item("c"),
-        Item("*"),
-        Item("d")))))
+//  val parseTree = 
+//    Section(List(
+//      Section(List(
+//        Item("a"),
+//        Item("*"),
+//        Item("b"))),
+//      Item("+"),
+//      Section(List(
+//        Item("c"),
+//        Item("*"),
+//        Item("d")))))
   
   // The location of the second multiplication sign in the parse tree.
-  val secMulLoc =
-    Loc(Item("*"),
-      Node(
-        List(Item("c")),
-        Node(
-          List(Item("+"), Section(List(Item("a"), Item("*"), Item("b")))),
-          Top(),
-          Nil),
-        List(Item("d"))));
-  
-  println(secMulLoc)
+//  val secMulLoc =
+//    Loc(Item("*"),
+//      Node(
+//        List(Item("c")),
+//        Node(
+//          List(Item("+"), Section(List(Item("a"), Item("*"), Item("b")))),
+//          Top(),
+//          Nil),
+//        List(Item("d"))));
+//  
+//  println(secMulLoc)
 }
