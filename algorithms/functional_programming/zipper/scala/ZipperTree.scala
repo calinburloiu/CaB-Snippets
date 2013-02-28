@@ -26,9 +26,9 @@ case class Node[+A](
     rights: List[ZipperTree[A]])
   extends ZipperTree[A] {
   
-//  override val toString: String =
-//      value + "(" + lefts.mkString("[", ",", "]") + "," + focus +
-//      "," + rights.mkString("[", ",", "]") + ")"
+  override val toString: String =
+      value + "(" + lefts.mkString("[", ",", "]") + "," + focus +
+      "," + rights.mkString("[", ",", "]") + ")"
 }
 
 object Node {
