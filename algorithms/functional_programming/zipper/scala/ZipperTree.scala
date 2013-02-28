@@ -231,18 +231,21 @@ object TreeLoc {
 
 object ZipperTreeApp extends App {
   // Parse tree of the arithmetic expression: +(*(a, b, c), *(d, e, f))
-  val t1 = Node("*",
-      Nil, 
-      Node("a", Nil, NilNode, Nil),
-      List(Node("b", Nil, NilNode, Nil), Node("c", Nil, NilNode, Nil)));
-  val t2 = Node("*",
-      Nil, 
-      Node("d", Nil, NilNode, Nil),
-      List(Node("e", Nil, NilNode, Nil), Node("f", Nil, NilNode, Nil)));
-  val sum = Node("+", Nil, t1, List(t2))
+  val sum =
+    Node("+",
+      Node("*",
+        Node("a"),
+        Node("b"),
+        Node("c")),
+      Node("*",
+        Node("d"),
+        Node("e"),
+        Node("f")));
   
-  val sumLoc = TreeLoc(sum, Top)
+  val sumLoc = TreeLoc(sum)
   var x = sumLoc
+  x = x.down.getOrElse(x)
+  x = x.right.getOrElse(x)
   
   println(x)
 }
