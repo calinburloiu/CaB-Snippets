@@ -1,0 +1,25 @@
+# Compiled source
+*.class
+*.pyc
+*.bak
+*.dll
+*.exe
+*.com
+*.o
+*.so
+
+# Packages
+*.jar
+*.7z
+*.dmg
+*.gz
+*.iso
+*.rar
+*.tar
+*.zip
+
+# Temporary files
+*.bak
+*~
+*.swp
+*.swo
